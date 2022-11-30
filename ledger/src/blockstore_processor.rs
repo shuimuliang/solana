@@ -1103,6 +1103,16 @@ pub fn confirm_slot(
     }?;
 
     // TODO: send shred to shred-channel
+    if let Some(entry_sender) = entry_sender {
+        let entries = &slot_entries_load_result.0;
+        if let Err(e) = entry_sender.send(entries.clone()) {
+            trace!(
+                "entries send batch failed: {:?}",
+                e
+            );
+        }
+    }
+
     confirm_slot_entries(
         bank,
         slot_entries_load_result,
@@ -3496,6 +3506,7 @@ pub mod tests {
             None,
             None,
             &mut ExecuteTimings::default(),
+            None,
         )
         .unwrap();
         bank_forks.set_root(

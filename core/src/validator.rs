@@ -562,7 +562,7 @@ impl Validator {
                 cache_block_meta_sender,
                 cache_block_meta_service,
             },
-            EntryServices{
+            EntryServices {
                 entry_sender,
                 entry_service,
             },
@@ -576,8 +576,8 @@ impl Validator {
             &start_progress,
             accounts_update_notifier,
             transaction_notifier,
-            entry_notifier,
             Some(poh_timing_point_sender.clone()),
+            entry_notifier,
         );
 
         node.info.wallclock = timestamp();
@@ -1400,8 +1400,8 @@ fn load_blockstore(
     start_progress: &Arc<RwLock<ValidatorStartProgress>>,
     accounts_update_notifier: Option<AccountsUpdateNotifier>,
     transaction_notifier: Option<TransactionNotifierLock>,
-    entry_notifier: Option<EntryNotifierLock>,
     poh_timing_point_sender: Option<PohTimingSender>,
+    entry_notifier: Option<EntryNotifierLock>,
 ) -> (
     GenesisConfig,
     Arc<RwLock<BankForks>>,
@@ -1665,7 +1665,7 @@ impl<'a> ProcessBlockStore<'a> {
                 self.transaction_status_sender,
                 self.cache_block_meta_sender.as_ref(),
                 &self.accounts_background_request_sender,
-                &self.entry_sender,
+                self.entry_sender,
             )
             .unwrap_or_else(|err| {
                 error!("Failed to load ledger: {:?}", err);
