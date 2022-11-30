@@ -18,12 +18,14 @@ use {
     std::{fs::File, io::Read},
     thiserror::Error,
 };
+use crate::entry_selector::EntrySelector;
 
 #[derive(Default)]
 pub struct GeyserPluginPostgres {
     client: Option<ParallelPostgresClient>,
     accounts_selector: Option<AccountsSelector>,
     transaction_selector: Option<TransactionSelector>,
+    entry_selector: Option<EntrySelector>,
     batch_starting_slot: Option<u64>,
 }
 
@@ -188,6 +190,7 @@ impl GeyserPlugin for GeyserPluginPostgres {
         let result: serde_json::Value = serde_json::from_str(&contents).unwrap();
         self.accounts_selector = Some(Self::create_accounts_selector_from_config(&result));
         self.transaction_selector = Some(Self::create_transaction_selector_from_config(&result));
+        self.entry_selector = Some(Self::create_entry_selector_from_config(&result));
 
         let config: GeyserPluginPostgresConfig =
             serde_json::from_str(&contents).map_err(|err| {
@@ -450,6 +453,13 @@ impl GeyserPlugin for GeyserPluginPostgres {
             .as_ref()
             .map_or_else(|| false, |selector| selector.is_enabled())
     }
+
+    /// Check if the plugin is interested in shred data
+    fn entry_notifications_enabled(&self) -> bool {
+        self.entry_selector
+            .as_ref()
+            .map_or_else(|| false, |selector| selector.is_enabled())
+    }
 }
 
 impl GeyserPluginPostgres {
@@ -506,6 +516,15 @@ impl GeyserPluginPostgres {
         }
     }
 
+    fn create_entry_selector_from_config(config: &serde_json::Value) -> EntrySelector {
+        let entry_selector = &config["entry_selector"];
+        if entry_selector.is_null() {
+           EntrySelector::default()
+        } else {
+           EntrySelector::new(true)
+        }
+    }
+
     pub fn new() -> Self {
         Self::default()
     }
@@ -534,5 +553,13 @@ pub(crate) mod tests {
 
         let config: serde_json::Value = serde_json::from_str(config).unwrap();
         GeyserPluginPostgres::create_accounts_selector_from_config(&config);
+    }
+    #[test]
+    fn test_entry_selector_from_config() {
+        let config = "{\"entry_selector\" : true}}";
+
+        let config: serde_json::Value = serde_json::from_str(config).unwrap();
+        let entry_selector= GeyserPluginPostgres::create_entry_selector_from_config(&config);
+        assert_eq!(true, entry_selector.is_enabled());
     }
 }
