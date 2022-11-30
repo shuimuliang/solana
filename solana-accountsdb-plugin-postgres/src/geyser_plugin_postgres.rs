@@ -1,9 +1,11 @@
+use serde_json::map::Entry;
 /// Main entry for the PostgreSQL plugin
 use {
     crate::{
         accounts_selector::AccountsSelector,
         postgres_client::{ParallelPostgresClient, PostgresClientBuilder},
         transaction_selector::TransactionSelector,
+        entry_selector::EntrySelector,
     },
     bs58,
     log::*,
@@ -13,12 +15,12 @@ use {
         GeyserPlugin, GeyserPluginError, ReplicaAccountInfoVersions, ReplicaBlockInfoVersions,
         ReplicaTransactionInfoVersions, Result, SlotStatus,
     },
+    solana_entry::entry::Entry,
     solana_measure::measure::Measure,
     solana_metrics::*,
     std::{fs::File, io::Read},
     thiserror::Error,
 };
-use crate::entry_selector::EntrySelector;
 
 #[derive(Default)]
 pub struct GeyserPluginPostgres {
@@ -437,6 +439,26 @@ impl GeyserPlugin for GeyserPluginPostgres {
 
         Ok(())
     }
+
+    fn notify_entry(&mut self, entry: &Entry) -> Result<()> {
+        match &mut self.client {
+            None => {
+                return Err(GeyserPluginError::Custom(Box::new(
+                    GeyserPluginPostgresError::DataStoreConnectionError {
+                        msg: "There is no connection to the PostgreSQL database.".to_string(),
+                    },
+                )));
+            }
+            Some(client) => match entry{
+                // entry to shred
+                // client.append_shred();
+                Ok(()),
+            },
+        }
+
+        Ok(())
+    }
+
 
     /// Check if the plugin is interested in account data
     /// Default is true -- if the plugin is not interested in
